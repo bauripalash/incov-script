@@ -107,10 +107,14 @@ if __name__ == "__main__":
     c = write_csv()
     if c:
         logger.info("COMPLETED!")
+        print("CSV COMPLETE")
     else:
         logger.critical("FAILED!")
+        print('CSV FAIL')
     p = push_to_github()
     if p:
         logger.info("PUSH DONE!")
+        print("GIT COMPLETE")
     else:
         logger.critical("PUSH FAILED!")
+        print("GIT FAIL")
