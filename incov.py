@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from github import Github, InputGitTreeElement
 import glob
 from string import Template
-import subprocess
 
 load_dotenv()
 
