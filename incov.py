@@ -1,7 +1,8 @@
 import requests
 import csv
 from bs4 import BeautifulSoup as bs
-from datetime import date
+from datetime import datetime, date
+import pytz
 import os
 import logging
 from flask import Flask, jsonify
@@ -9,7 +10,7 @@ from dotenv import load_dotenv
 from github import Github, InputGitTreeElement
 import glob
 from string import Template
-
+import subprocess
 
 load_dotenv()
 
@@ -29,6 +30,9 @@ REPORT_REPO_NAME = "incov-report"
 # Functions
 
 
+if not os.path.isdir(DATAFOLDER):
+    os.mkdir(DATAFOLDER)
+
 def get_scrapped_data(URL : str):
     try:
         page = requests.get(URL).text
@@ -36,6 +40,20 @@ def get_scrapped_data(URL : str):
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Fetching Source : {str(e)}")
+        return False
+
+def fetch_data_from_github():
+    try:
+        req = requests.get("https://api.github.com/repos/{}/{}/contents/{}".format("bauripalash" , REPO_NAME , "data")).json()
+        #print(req)
+        for item in req:
+            content = requests.get(item["download_url"] , allow_redirects=True).content.decode("utf-8")
+            with open(os.path.join(DATAFOLDER , item["name"]) , "w") as f:
+                f.write(content)
+        return True
+    except Exception as e:
+        print(e)
+        logger.error("Cannot Fetch Data Folder From Github")
         return False
 
 
@@ -60,8 +78,6 @@ def write_csv(soup = None ):
             
         filename = str(date.today().isoformat()) + ".csv"
 
-        if not os.path.isdir(DATAFOLDER):
-            os.mkdir(DATAFOLDER)
 
         if not os.path.isfile(DATAFOLDER):
             open(os.path.join(DATAFOLDER, filename), "w").close()
@@ -141,6 +157,7 @@ def push_report_to_github():
         return False
 
 def parse_html(effected : int , cured : int , death : int , states : int , table : int):
+    update_time = datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")
     TEMPLATEFILE = "template.html"
     TABLE_ROW_TEMPLATE = "<tr><td>$S</td><td>$E</td><td>$C</td><td>$D</td></tr>"
     TEMP_ROW = ""
@@ -157,7 +174,8 @@ def parse_html(effected : int , cured : int , death : int , states : int , table
             "DEATHS" : death,
             "RECOVERED" : cured,
             "STATES" : states,
-            "TABLE" : TEMP_ROW
+            "TABLE" : TEMP_ROW,
+            "LUPDATE" : update_time
             }
     return Template(open(TEMPLATEFILE).read()).safe_substitute(**context)
 
@@ -198,34 +216,42 @@ def build_report(soup=None):
 
 def main():
     soup = get_scrapped_data(URL)
-    c = write_csv(soup)
-    if c:
-        logger.info("CSV WRITE COMPLETE")
-        print("CSV WRITE COMPLETE")
-        gh = push_to_github()
-        if build_report(soup):
-            rep = push_report_to_github()
+    if fetch_data_from_github():
+        print("DATA FOLDER FETCH COMPLETED")
+        c = write_csv(soup)
+        if c:
+            logger.info("CSV WRITE COMPLETED")
+            print("CSV WRITE COMPLETED")
+            gh = push_to_github()
+            if build_report(soup):
+                rep = push_report_to_github()
+            else:
+                logger.error("REPORT BUILD FAILED")
+                print("REPORT BUILD FAILED")
+            
+            if gh and rep:
+                logger.info("ALL GITHUB PUSH COMPLETED")
+
+                print("ALL GITHUB PUSH COMPLETED")
+            else:
+                if not gh:
+                    logger.error("DATA PUSH FAILED")
+                    print("DATA PUSH FAILED")
+                if not rep:
+                    logger.error("REPORT PUSH FAILED")
+                    print("REPORT PUSH FAILED")
         else:
-            logger.error("REPORT BUILD FAILED")
-            print("REPORT BUILD FAILED")
-        
-        if gh and rep:
-            logger.info("ALL GITHUB PUSH COMPLETE")
-            print("ALL GITHUB PUSH COMPLETE")
-        else:
-            if not gh:
-                logger.error("DATA PUSH FAILED")
-                print("DATA PUSH FAILED")
-            if not rep:
-                logger.error("REPORT PUSH FAILED")
-                print("REPORT PUSH FAILED")
+            logger.error("CSV WRITE FAILED")
+            print("CSV WRITE FAILED")
+
     else:
-        logger.error("CSV WRITE FAILED")
-        print("CSV WRITE FAILED")
+        print("DATA FOLDER FETCH FAILED")
 
 
 if __name__ == "__main__":
     main()
+    #push_to_github()
+    #fetch_data_from_github()
     #soup = get_scrapped_data(URL)
     #build_report(soup)
     #c = write_csv(soup)
