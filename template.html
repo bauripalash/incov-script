@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      India's Statewise Coronavirus (COVID-19) Report | Palash Bauri
+    </title>
+    <meta
+      name="description"
+      content="Indian Statewise Coronavirus COVID-19 Effected Report"
+    />
+  </head>
+  <body>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Benton Sans", "Helvetica Neue", helvetica, arial,
+          sans-serif;
+        margin: 2em;
+        margin: auto;
+        text-align: center;
+        background: whitesmoke;
+      }
+      .main {
+        margin-bottom: 25px;
+        padding: 0px 10px 5px 10px;
+        margin: 8px auto 8px;
+        border: 2px solid #0e2877;
+        box-shadow: 5px 6px 0px #0e2877;
+        width: 95%;
+        max-width: 600px;
+        border-radius: 16px;
+      }
+      h2,
+      .h2 {
+        color: #102e87;
+      }
+      .e_box {
+        border: 2px solid #102e87;
+        margin: 2rem;
+      }
+      .e_label {
+        color: #102e87;
+        /* font-style: italic; */
+        font-size: medium;
+      }
+      .e_num {
+        color: red;
+        font-weight: bold;
+        font-family: monospace;
+        font-size: 2rem;
+      }
+      .r_num {
+        color: green;
+        font-weight: bold;
+        font-family: monospace;
+        font-size: 2rem;
+      }
+      .s_num {
+        color: blue;
+        font-weight: bold;
+        font-family: monospace;
+        font-size: 2rem;
+      }
+      table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+        border: 1px solid #ddd;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 8px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      small{
+          color:gray;
+      }
+    </style>
+    <div class="main">
+      <h2>Coronavirus Report of India</h2>
+      <h4>Statewise COVID-19 Report of India</h4>
+      <hr />
+      <div class="e_box">
+        <p class="e_label">Total Effected</p>
+        <p class="e_num">$EFFECTED</p>
+      </div>
+      <div class="e_box">
+        <p class="e_label">Total Death</p>
+        <p class="e_num">$DEATHS</p>
+      </div>
+      <div class="e_box">
+        <p class="e_label">Total Recovered</p>
+        <p class="r_num">$RECOVERED</p>
+      </div>
+      <div class="e_box">
+        <p class="e_label">States Effected</p>
+        <p class="s_num">$STATES</p>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <tr>
+            <th>States/UT</th>
+            <th>Effected</th>
+            <th>Recovered</th>
+            <th>Death</th>
+          </tr>
+          $TABLE
+        </table>
+      </div>
+      <br />
+      <hr>
+      <small>Data Provided by <a href="https://www.mohfw.gov.in">Ministry of Health and Family Welfare , Govt. of India</a> <br> Developed by <a href="https://bauripalash.keybase.pub/">Palash Bauri</a></small><br>
+    </div>
+  </body>
+</html>
