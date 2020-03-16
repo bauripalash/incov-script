@@ -251,12 +251,10 @@ def main():
         if c:
             logger.info("CSV WRITE COMPLETED")
             print("CSV WRITE COMPLETED")
+
+            rep = build_json(soup)
             gh = push_to_github()
-            if build_report(soup):
-                rep = build_json(soup)
-            else:
-                logger.error("REPORT BUILD FAILED")
-                print("REPORT BUILD FAILED")
+            
             
             if gh and rep:
                 logger.info("ALL GITHUB PUSH COMPLETED")
