@@ -228,7 +228,7 @@ def build_json(soup):
             total_d += int(tds[5].text)
             total_s += 1
             table.append({"state" : tds[1].text , "effected" : int(tds[2].text) + int(tds[3].text) , "recovered" : int(tds[4].text) , "death" : int(tds[5].text)})
-        table.append({"total_effected" : total_e , "total_cured" : total_c , "total_death" : total_d , "total_states" : total_s})
+        table.append({"total_effected" : total_e , "total_cured" : total_c , "total_death" : total_d , "total_states" : total_s , "last_update" : datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")})
         #print(table)
         #rj = json.dumps(table)
         json.dump(table , open(os.path.join(DATAFOLDER , "report.json") , "w"))
