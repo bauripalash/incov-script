@@ -4,3 +4,4 @@ REPORT-index.html
 index.html
 log.txt
 temp
+__pycache__

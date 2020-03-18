@@ -88,7 +88,7 @@ def build_daily_data_json():
 def get_scrapped_data(URL: str):
     try:
         page = requests.get(URL).text
-        return bs(page, "html.parser")
+        return bs(page, "xml")
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Fetching Source : {str(e)}")
