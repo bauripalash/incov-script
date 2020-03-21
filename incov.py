@@ -117,7 +117,7 @@ def print_data(soup=None):
         if not soup is None:
             soup = get_scrapped_data(URL)
 
-        for tr in soup.find_all('tr')[1:-1]:
+        for tr in soup.find_all('tr')[1:-2]:
             tds = tr.find_all('td')
             print(f"State/UT: {tds[1].text}, Confirmed (Indian National): {tds[2].text}, Confirmed (Foreign National): {tds[3].text}, Cured/Discharged: {tds[4].text}, Death: {tds[5].text}")
         return True
@@ -140,7 +140,7 @@ def write_csv(soup=None):
             writer = csv.writer(f)
             writer.writerow(CSV_HEADERS)
             #soup = get_scrapped_data(URL)
-            for tr in soup.find_all("tr")[1:-1]:
+            for tr in soup.find_all("tr")[1:-2]:
                 tds = tr.find_all("td")
                 writer.writerow([tds[1].text, tds[2].text,
                                  tds[3].text, tds[4].text, tds[5].text])
@@ -280,7 +280,7 @@ def build_json(soup):
     try:
         total_c = total_e = total_d = total_s = 0
         table = []
-        for tr in soup.find_all("tr")[1:-1]:
+        for tr in soup.find_all("tr")[1:-2]:
             tds = tr.find_all("td")
             total_e += int(tds[2].text) + int(tds[3].text)
             total_c += int(tds[4].text)
