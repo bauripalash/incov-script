@@ -280,7 +280,7 @@ def build_json(soup):
     try:
         total_c = total_e = total_d = total_s = 0
         table = []
-        for tr in soup.find_all("tr")[1:-1]:
+        for tr in soup.find_all("tr")[1:-2]:
             tds = tr.find_all("td")
             total_e += int(tds[2].text) + int(tds[3].text)
             total_c += int(tds[4].text)
