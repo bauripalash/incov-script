@@ -49,34 +49,14 @@ def build_daily_data_json():
     try:
         TABLE = dict.fromkeys(["CONFIRMED", "DEATHS", "RECOVERED"])
         for k in DAILY.keys():
-            # TEMP = {}
-            c = requests.get(DAILY[k]).text
-            with open(os.path.join(TEMPFOLDER, k + ".csv"), "w") as f:
-                f.write(c)
-
-            p = pd.read_csv(open(os.path.join(TEMPFOLDER, k+".csv")))
+            p = pd.read_csv(DAILY[k]).drop(["Province/State" , "Lat" , "Long"] , axis=1)
             newframe = p.loc[p["Country/Region"] == "India"]
-
-            # p.drop("Long").drop("Lat")
-            newframe = newframe.drop(
-                ["Lat",  "Province/State",  "Country/Region", "Long"], axis=1)
-            # p.drop(["Long" , "Lat" , "Province/State"] , axis=1)
-            # print(newframe.head())
-            # print(newframe.columns)
-            # print(p.loc[p["Country/Region"]=="India"])
-            # break
+            newframe = newframe.drop(["Country/Region"], axis=1)
+            #print(newframe.sum())
             x = {}
             for i in newframe:
-                # print(i, newframe[i].values[0])
                 x[i] = int(newframe[i].values[0])
-            # TEMP[k] = x
-            # newframe.to_csv(os.path.join(TEMPFOLDER , k + ".csv") , index=False)
-            # open(os.path.join(TEMPFOLDER , k + ".csv") , "w").write(newframe.to_csv())
-            # print(p["Country/Region"])
-            # break
-            # TABLE.append(TEMP)
             TABLE[k] = x
-        # print(TABLE)
         json.dump(TABLE, open(os.path.join(DATAFOLDER, "trend.json"), "w"))
         return True
 
@@ -88,7 +68,7 @@ def build_daily_data_json():
 def get_scrapped_data(URL: str):
     try:
         page = requests.get(URL).text
-        return bs(page, "xml")
+        return bs(page, "html.parser")
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Fetching Source : {str(e)}")
@@ -112,18 +92,21 @@ def fetch_data_from_github():
         return False
 
 
-def print_data(soup=None):
+def print_data_table(soup=None):
     try:
         if not soup is None:
             soup = get_scrapped_data(URL)
 
-        for tr in soup.find_all('tr')[1:-2]:
+        for tr in soup.find_all('tbody')[1].find_all('tr')[:-1]:
             tds = tr.find_all('td')
             print(f"State/UT: {tds[1].text}, Confirmed (Indian National): {tds[2].text}, Confirmed (Foreign National): {tds[3].text}, Cured/Discharged: {tds[4].text}, Death: {tds[5].text}")
         return True
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Printing Table : {str(e)}")
+
+def print_data(soup):
+    print(soup.find_all('tbody')[1].find_all("tr")[:-1])
 
 
 def write_csv(soup=None):
@@ -140,7 +123,7 @@ def write_csv(soup=None):
             writer = csv.writer(f)
             writer.writerow(CSV_HEADERS)
             #soup = get_scrapped_data(URL)
-            for tr in soup.find_all("tr")[1:-2]:
+            for tr in soup.find_all('tbody')[1].find_all("tr")[:-1]:
                 tds = tr.find_all("td")
                 writer.writerow([tds[1].text, tds[2].text,
                                  tds[3].text, tds[4].text, tds[5].text])
@@ -185,102 +168,11 @@ def push_to_github():
         return False
 
 
-def push_report_to_github():
-    try:
-        file_list = [
-            os.path.join(os.curdir, "REPORT-index.html"),
-            os.path.join(os.curdir, "REPORT-CNAME")
-        ]
-        remote_files = ["index.html", "CNAME"]
-        TOKEN = os.getenv("GHTOKEN")
-        g = Github(TOKEN)
-        nrepo = g.get_user().get_repo(REPORT_REPO_NAME)
-        commit_msg = "REPORT AUTO UPDATE :bug:"
-        master_ref = nrepo.get_git_ref("heads/master")
-        master_sha = master_ref.object.sha
-        base_tree = nrepo.get_git_tree(master_sha)
-        elist = []
-        for i, entry in enumerate(file_list):
-            with open(entry) as input_file:
-                data = input_file.read()
-            elem = InputGitTreeElement(remote_files[i], '100644', 'blob', data)
-            elist.append(elem)
-        tree = nrepo.create_git_tree(elist)
-        parent = nrepo.get_git_commit(master_sha)
-        commit = nrepo.create_git_commit(commit_msg, tree, [parent])
-        master_ref.edit(commit.sha)
-        # print(elist)
-        return True
-    except Exception as e:
-        print(e)
-        logger.error(e)
-        return False
-
-
-def parse_html(effected: int, cured: int, death: int, states: int, table: int):
-    update_time = datetime.now(pytz.timezone(
-        "Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")
-    TEMPLATEFILE = "template.html"
-    TABLE_ROW_TEMPLATE = "<tr><td>$S</td><td>$E</td><td>$C</td><td>$D</td></tr>"
-    TEMP_ROW = ""
-    for t in table:
-        context = {
-            "S": t[0],
-            "E": int(t[1])+int(t[2]),
-            "C": t[3],
-            "D": t[4]
-        }
-        TEMP_ROW += Template(TABLE_ROW_TEMPLATE).safe_substitute(**context)
-    context = {
-        "EFFECTED": effected,
-        "DEATHS": death,
-        "RECOVERED": cured,
-        "STATES": states,
-        "TABLE": TEMP_ROW,
-        "LUPDATE": update_time
-    }
-    return Template(open(TEMPLATEFILE).read()).safe_substitute(**context)
-
-
-def build_report(soup=None):
-    try:
-        total_effected = 0
-        total_death = 0
-        total_states = 0
-        total_cured = 0
-        table = []
-
-        if soup is None:
-            soup = get_scrapped_data(URL)
-
-        for tr in soup.find_all("tr")[1:-1]:
-            tds = tr.find_all("td")
-
-            total_effected += int(tds[2].text) + int(tds[3].text)
-            total_cured += int(tds[4].text)
-            total_death += int(tds[5].text)
-            total_states += 1
-
-            table.append([tds[1].text, tds[2].text,
-                          tds[3].text, tds[4].text, tds[5].text])
-
-        #print(total_effected , table)
-        phtml = parse_html(total_effected, total_cured,
-                           total_death, total_states, table)
-        with open("REPORT-index.html", "w") as f:
-            f.write(phtml)
-        return True
-
-    except Exception as e:
-        print(e)
-        return False
-
-
 def build_json(soup):
     try:
         total_c = total_e = total_d = total_s = 0
         table = []
-        for tr in soup.find_all("tr")[1:-2]:
+        for tr in soup.find_all('tbody')[1].find_all("tr")[:-1]:
             tds = tr.find_all("td")
             total_e += int(tds[2].text) + int(tds[3].text)
             total_c += int(tds[4].text)
@@ -335,7 +227,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+    #print_data(get_scrapped_data(URL))
     # push_to_github()
     # fetch_data_from_github()
     #soup = get_scrapped_data(URL)
