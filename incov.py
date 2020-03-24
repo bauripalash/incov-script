@@ -65,10 +65,13 @@ def build_daily_data_json():
         return False
 
 
-def get_scrapped_data(URL: str):
+def get_scrapped_data(U: str = None):
     try:
-        page = requests.get(URL).text
-        return bs(page, "html.parser")
+        if U is None:
+            U = URL
+        page = requests.get(U).text
+        soup = bs(page, "html.parser")
+        return soup.find("div" , {"id" : "cases"}).find_all('tbody')[0].find_all("tr")[:-1]
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Fetching Source : {str(e)}")
@@ -94,10 +97,10 @@ def fetch_data_from_github():
 
 def print_data_table(soup=None):
     try:
-        if not soup is None:
+        if soup is None:
             soup = get_scrapped_data(URL)
 
-        for tr in soup.find_all('tbody')[1].find_all('tr')[:-1]:
+        for tr in soup:
             tds = tr.find_all('td')
             print(f"State/UT: {tds[1].text}, Confirmed (Indian National): {tds[2].text}, Confirmed (Foreign National): {tds[3].text}, Cured/Discharged: {tds[4].text}, Death: {tds[5].text}")
         return True
@@ -105,8 +108,10 @@ def print_data_table(soup=None):
         print(e)
         logger.error(f"Got Error While Printing Table : {str(e)}")
 
-def print_data(soup):
-    print(soup.find_all('tbody')[1].find_all("tr")[:-1])
+def print_data(soup=None):
+    if soup is None:
+        soup = get_scrapped_data(URL)
+    print(soup)
 
 
 def write_csv(soup=None):
@@ -123,7 +128,7 @@ def write_csv(soup=None):
             writer = csv.writer(f)
             writer.writerow(CSV_HEADERS)
             #soup = get_scrapped_data(URL)
-            for tr in soup.find_all('tbody')[1].find_all("tr")[:-1]:
+            for tr in soup:
                 tds = tr.find_all("td")
                 writer.writerow([tds[1].text, tds[2].text,
                                  tds[3].text, tds[4].text, tds[5].text])
@@ -168,11 +173,13 @@ def push_to_github():
         return False
 
 
-def build_json(soup):
+def build_json(soup = None):
     try:
+        if soup is None:
+            soup = get_scrapped_data()
         total_c = total_e = total_d = total_s = 0
         table = []
-        for tr in soup.find_all('tbody')[1].find_all("tr")[:-1]:
+        for tr in soup:
             tds = tr.find_all("td")
             total_e += int(tds[2].text) + int(tds[3].text)
             total_c += int(tds[4].text)
