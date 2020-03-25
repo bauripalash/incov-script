@@ -21,6 +21,8 @@ logging.basicConfig(filename="log.txt",
 logger = logging.getLogger()
 logger.setLevel(level=logging.INFO)
 
+RECOVERED_BACKUP = {"1/22/20": 0, "1/23/20": 0, "1/24/20": 0, "1/25/20": 0, "1/26/20": 0, "1/27/20": 0, "1/28/20": 0, "1/29/20": 0, "1/30/20": 0, "1/31/20": 0, "2/1/20": 0, "2/2/20": 0, "2/3/20": 0, "2/4/20": 0, "2/5/20": 0, "2/6/20": 0, "2/7/20": 0, "2/8/20": 0, "2/9/20": 0, "2/10/20": 0, "2/11/20": 0, "2/12/20": 0, "2/13/20": 0, "2/14/20": 0, "2/15/20": 0, "2/16/20": 3, "2/17/20": 3, "2/18/20": 3, "2/19/20": 3, "2/20/20": 3, "2/21/20": 3, "2/22/20": 3, "2/23/20": 3, "2/24/20": 3, "2/25/20": 3, "2/26/20": 3, "2/27/20": 3, "2/28/20": 3, "2/29/20": 3, "3/1/20": 3, "3/2/20": 3, "3/3/20": 3, "3/4/20": 3, "3/5/20": 3, "3/6/20": 3, "3/7/20": 3, "3/8/20": 3, "3/9/20": 3, "3/10/20": 4, "3/11/20": 4, "3/12/20": 4, "3/13/20": 4, "3/14/20": 4, "3/15/20": 13, "3/16/20": 13, "3/17/20": 14, "3/18/20": 14, "3/19/20": 15, "3/20/20": 20, "3/21/20": 23, "3/22/20": 27, "3/23/20": 27 , "3/24/20" : 40}
+
 # Constants
 URL = "https://www.mohfw.gov.in/"
 DATAFOLDER = os.path.join(os.curdir, "data")
@@ -31,9 +33,8 @@ REPO_NAME = "ncov-19-india"
 REPORT_REPO_NAME = "incov-report"
 
 DAILY = {
-    "CONFIRMED": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv",
-    "DEATHS": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv",
-    "RECOVERED": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv"
+    "CONFIRMED": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",
+    "DEATHS": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv",
 }
 # Functions
 
@@ -46,17 +47,31 @@ def build_daily_data_json():
     if not os.path.isdir(TEMPFOLDER):
         os.mkdir(TEMPFOLDER)
 
+    soup = get_scrapped_data()
+
     try:
         TABLE = dict.fromkeys(["CONFIRMED", "DEATHS", "RECOVERED"])
-        for k in DAILY.keys():
-            p = pd.read_csv(DAILY[k]).drop(["Province/State" , "Lat" , "Long"] , axis=1)
-            newframe = p.loc[p["Country/Region"] == "India"]
-            newframe = newframe.drop(["Country/Region"], axis=1)
-            #print(newframe.sum())
-            x = {}
-            for i in newframe:
-                x[i] = int(newframe[i].values[0])
-            TABLE[k] = x
+        for k in ["CONFIRMED", "DEATHS", "RECOVERED"]:
+            # print(k)
+            if k == "RECOVERED":
+                # print("rec")
+                rec = 0
+                for tr in soup:
+                    tds = tr.find_all('td')
+                    rec += int(tds[4].text)
+                today = datetime.now(pytz.timezone("Asia/Kolkata")).strftime('%m/%d/%y').lstrip("0").replace("/0", "/")
+                RECOVERED_BACKUP[today] = rec
+                TABLE[k] = RECOVERED_BACKUP
+            else:
+                p = pd.read_csv(DAILY[k]).drop(["Province/State" , "Lat" , "Long"] , axis=1)
+                newframe = p.loc[p["Country/Region"] == "India"]
+                newframe = newframe.drop(["Country/Region"], axis=1)
+                #print(newframe.sum())
+                x = {}
+                for i in newframe:
+                    x[i] = int(newframe[i].values[0])
+                TABLE[k] = x
+
         json.dump(TABLE, open(os.path.join(DATAFOLDER, "trend.json"), "w"))
         return True
 
