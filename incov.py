@@ -146,7 +146,7 @@ def write_csv(soup=None):
             for tr in soup:
                 tds = tr.find_all("td")
                 writer.writerow([tds[1].text, tds[2].text,
-                                 tds[3].text, tds[4].text, tds[5].text])
+                                 tds[3].text, tds[4].text, str(tds[5].text).replace("#" , "")])
         return True
     except Exception as e:
         print(e)
@@ -198,10 +198,10 @@ def build_json(soup = None):
             tds = tr.find_all("td")
             total_e += int(tds[2].text) + int(tds[3].text)
             total_c += int(tds[4].text)
-            total_d += int(tds[5].text)
+            total_d += int(str(tds[5].text).replace("#" , ""))
             total_s += 1
             table.append({"state": tds[1].text, "effected": int(
-                tds[2].text) + int(tds[3].text), "recovered": int(tds[4].text), "death": int(tds[5].text)})
+                tds[2].text) + int(tds[3].text), "recovered": int(tds[4].text), "death": int(str(tds[5].text).replace("#" , ""))})
         table.append({"total_effected": total_e, "total_cured": total_c, "total_death": total_d, "total_states": total_s,
                       "last_update": datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")})
         # print(table)
