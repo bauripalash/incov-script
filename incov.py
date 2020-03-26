@@ -86,7 +86,7 @@ def get_scrapped_data(U: str = None):
             U = URL
         page = requests.get(U).text
         soup = bs(page, "html.parser")
-        return soup.find("div" , {"id" : "cases"}).find_all('tbody')[0].find_all("tr")[:-1]
+        return soup.find("div" , {"id" : "cases"}).find_all('tbody')[0].find_all("tr")[:-2]
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Fetching Source : {str(e)}")
