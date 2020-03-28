@@ -26,7 +26,7 @@ jobs:
         pip install -r requirements.txt
     - name: Fetch Data
       run: |
-        python incov.py
+        ./run.sh
         echo "DONE!"
       env:
         GHTOKEN: ${{ secrets.GHTOKEN }}
