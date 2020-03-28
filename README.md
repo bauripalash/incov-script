@@ -1,4 +1,8 @@
-# incov-script
-Script to Fetch the Data of Novel Coronavirus 2019 of India
+# PROJECT INCOV
+## Data Scrapper : INCOV-SCRIPT
 
-DATA REPO LINK : <https://github.com/bauripalash/ncov-19-india>
+![](./info.png)
+
+### How to Install
+* pip3 install -r requirements.txt
+* python3 incov.py
