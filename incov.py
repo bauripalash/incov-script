@@ -12,6 +12,10 @@ from github import Github, InputGitTreeElement
 import glob
 from string import Template
 import pandas as pd
+import smtplib
+import ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 load_dotenv()
 
@@ -21,7 +25,8 @@ logging.basicConfig(filename="log.txt",
 logger = logging.getLogger()
 logger.setLevel(level=logging.INFO)
 
-RECOVERED_BACKUP = {"1/22/20": 0, "1/23/20": 0, "1/24/20": 0, "1/25/20": 0, "1/26/20": 0, "1/27/20": 0, "1/28/20": 0, "1/29/20": 0, "1/30/20": 0, "1/31/20": 0, "2/1/20": 0, "2/2/20": 0, "2/3/20": 0, "2/4/20": 0, "2/5/20": 0, "2/6/20": 0, "2/7/20": 0, "2/8/20": 0, "2/9/20": 0, "2/10/20": 0, "2/11/20": 0, "2/12/20": 0, "2/13/20": 0, "2/14/20": 0, "2/15/20": 0, "2/16/20": 3, "2/17/20": 3, "2/18/20": 3, "2/19/20": 3, "2/20/20": 3, "2/21/20": 3, "2/22/20": 3, "2/23/20": 3, "2/24/20": 3, "2/25/20": 3, "2/26/20": 3, "2/27/20": 3, "2/28/20": 3, "2/29/20": 3, "3/1/20": 3, "3/2/20": 3, "3/3/20": 3, "3/4/20": 3, "3/5/20": 3, "3/6/20": 3, "3/7/20": 3, "3/8/20": 3, "3/9/20": 3, "3/10/20": 4, "3/11/20": 4, "3/12/20": 4, "3/13/20": 4, "3/14/20": 4, "3/15/20": 13, "3/16/20": 13, "3/17/20": 14, "3/18/20": 14, "3/19/20": 15, "3/20/20": 20, "3/21/20": 23, "3/22/20": 27, "3/23/20": 27 , "3/24/20" : 40}
+RECOVERED_BACKUP = {"1/22/20": 0, "1/23/20": 0, "1/24/20": 0, "1/25/20": 0, "1/26/20": 0, "1/27/20": 0, "1/28/20": 0, "1/29/20": 0, "1/30/20": 0, "1/31/20": 0, "2/1/20": 0, "2/2/20": 0, "2/3/20": 0, "2/4/20": 0, "2/5/20": 0, "2/6/20": 0, "2/7/20": 0, "2/8/20": 0, "2/9/20": 0, "2/10/20": 0, "2/11/20": 0, "2/12/20": 0, "2/13/20": 0, "2/14/20": 0, "2/15/20": 0, "2/16/20": 3, "2/17/20": 3, "2/18/20": 3, "2/19/20": 3, "2/20/20": 3, "2/21/20": 3,
+                    "2/22/20": 3, "2/23/20": 3, "2/24/20": 3, "2/25/20": 3, "2/26/20": 3, "2/27/20": 3, "2/28/20": 3, "2/29/20": 3, "3/1/20": 3, "3/2/20": 3, "3/3/20": 3, "3/4/20": 3, "3/5/20": 3, "3/6/20": 3, "3/7/20": 3, "3/8/20": 3, "3/9/20": 3, "3/10/20": 4, "3/11/20": 4, "3/12/20": 4, "3/13/20": 4, "3/14/20": 4, "3/15/20": 13, "3/16/20": 13, "3/17/20": 14, "3/18/20": 14, "3/19/20": 15, "3/20/20": 20, "3/21/20": 23, "3/22/20": 27, "3/23/20": 27, "3/24/20": 40}
 
 # Constants
 URL = "https://www.mohfw.gov.in/"
@@ -59,14 +64,16 @@ def build_daily_data_json():
                 for tr in soup:
                     tds = tr.find_all('td')
                     rec += int(tds[4].text)
-                today = datetime.now(pytz.timezone("Asia/Kolkata")).strftime('%m/%d/%y').lstrip("0").replace("/0", "/")
+                today = datetime.now(pytz.timezone(
+                    "Asia/Kolkata")).strftime('%m/%d/%y').lstrip("0").replace("/0", "/")
                 RECOVERED_BACKUP[today] = rec
                 TABLE[k] = RECOVERED_BACKUP
             else:
-                p = pd.read_csv(DAILY[k]).drop(["Province/State" , "Lat" , "Long"] , axis=1)
+                p = pd.read_csv(DAILY[k]).drop(
+                    ["Province/State", "Lat", "Long"], axis=1)
                 newframe = p.loc[p["Country/Region"] == "India"]
                 newframe = newframe.drop(["Country/Region"], axis=1)
-                #print(newframe.sum())
+                # print(newframe.sum())
                 x = {}
                 for i in newframe:
                     x[i] = int(newframe[i].values[0])
@@ -86,7 +93,7 @@ def get_scrapped_data(U: str = None):
             U = URL
         page = requests.get(U).text
         soup = bs(page, "html.parser")
-        return soup.find("div" , {"id" : "cases"}).find_all('tbody')[0].find_all("tr")[:-2]
+        return soup.find("div", {"id": "cases"}).find_all('tbody')[0].find_all("tr")[:-2]
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Fetching Source : {str(e)}")
@@ -123,6 +130,7 @@ def print_data_table(soup=None):
         print(e)
         logger.error(f"Got Error While Printing Table : {str(e)}")
 
+
 def print_data(soup=None):
     if soup is None:
         soup = get_scrapped_data(URL)
@@ -146,7 +154,7 @@ def write_csv(soup=None):
             for tr in soup:
                 tds = tr.find_all("td")
                 writer.writerow([tds[1].text, tds[2].text,
-                                 tds[3].text, tds[4].text, str(tds[5].text).replace("#" , "")])
+                                 tds[3].text, tds[4].text, str(tds[5].text).replace("#", "")])
         return True
     except Exception as e:
         print(e)
@@ -165,7 +173,8 @@ def push_to_github():
         TOKEN = os.getenv("GHTOKEN")
         g = Github(TOKEN)
         nrepo = g.get_user().get_repo(REPO_NAME)
-        commit_msg = "AUTO UPDATE :bug:"
+        commit_msg = ":bug: {}".format(datetime.now(
+            pytz.timezone("Asia/Kolkata")).isoformat())
         master_ref = nrepo.get_git_ref("heads/master")
         master_sha = master_ref.object.sha
         base_tree = nrepo.get_git_tree(master_sha)
@@ -188,7 +197,7 @@ def push_to_github():
         return False
 
 
-def build_json(soup = None):
+def build_json(soup=None):
     try:
         if soup is None:
             soup = get_scrapped_data()
@@ -198,10 +207,10 @@ def build_json(soup = None):
             tds = tr.find_all("td")
             total_e += int(tds[2].text) + int(tds[3].text)
             total_c += int(tds[4].text)
-            total_d += int(str(tds[5].text).replace("#" , ""))
+            total_d += int(str(tds[5].text).replace("#", ""))
             total_s += 1
             table.append({"state": tds[1].text, "effected": int(
-                tds[2].text) + int(tds[3].text), "recovered": int(tds[4].text), "death": int(str(tds[5].text).replace("#" , ""))})
+                tds[2].text) + int(tds[3].text), "recovered": int(tds[4].text), "death": int(str(tds[5].text).replace("#", ""))})
         table.append({"total_effected": total_e, "total_cured": total_c, "total_death": total_d, "total_states": total_s,
                       "last_update": datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")})
         # print(table)
@@ -215,6 +224,48 @@ def build_json(soup = None):
         return False
 
 
+def send_email(status: bool, msg="SUCCESS"):
+    port = 587  # For starttls
+    smtp_server = "smtp.gmail.com"
+    sender_email = os.getenv("FROM_EMAIL")
+    receiver_email = os.getenv("FROM_EMAIL")
+    password = os.getenv("EMAIL_PASS")
+    message = f"""
+    INCOV PROJECT RUN REPORT
+    ------------------------
+
+    LAST RUN : {datetime.now(pytz.timezone("Asia/Kolkata")).isoformat()}
+
+    LAST STATUS : {"SUCCESS!" if status else "FAILED!"}
+
+    LAST RUN MESSAGE : {"ALL fUNCTIONS RAN SUCCESSFULLY" if status else "FAILED ON : " + msg}
+    """
+
+    # context = ssl.create_default_context()
+    # with smtplib.SMTP(smtp_server, port) as server:
+    #     server.ehlo()  # Can be omitted
+    #     server.starttls(context=context)
+    #     server.ehlo()  # Can be omitted
+    #     server.login(sender_email, password)
+    #     server.sendmail(sender_email, receiver_email, message)
+
+    fromaddr = sender_email
+    toaddr = receiver_email
+    msg = MIMEMultipart()
+    msg['From'] = fromaddr
+    msg['To'] = toaddr
+    msg['Subject'] = f"Incov Project : Status : {datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%d-%m_%H-%M')}"
+    body = message
+    msg.attach(MIMEText(body, 'plain'))
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.starttls()
+    s.login(fromaddr, password)
+    text = msg.as_string()
+    s.sendmail(fromaddr, toaddr, text)
+    s.quit()
+    print("SENT EMAIL")
+
+
 def main():
     soup = get_scrapped_data(URL)
     if fetch_data_from_github():
@@ -225,31 +276,37 @@ def main():
             print("CSV WRITE COMPLETED")
 
             rep = build_json(soup)
-            tr = True#build_daily_data_json()
+            tr = True  # build_daily_data_json()
             gh = push_to_github()
 
             if gh and rep and tr:
                 logger.info("ALL GITHUB PUSH COMPLETED")
 
                 print("ALL GITHUB PUSH COMPLETED")
+                send_email(True)
             else:
                 if not gh:
                     logger.error("DATA PUSH FAILED")
                     print("DATA PUSH FAILED")
+                    send_email(False, "DATA")
                 if not rep:
                     logger.error("REPORT PUSH FAILED")
                     print("REPORT PUSH FAILED")
+                    send_email(False, "REPORT")
+
         else:
             logger.error("CSV WRITE FAILED")
             print("CSV WRITE FAILED")
+            send_email(False, "CSV")
 
     else:
         print("DATA FOLDER FETCH FAILED")
+        send_email(False, "FOLDER")
 
 
 if __name__ == "__main__":
     main()
-    #print_data(get_scrapped_data(URL))
+    # print_data(get_scrapped_data(URL))
     # push_to_github()
     # fetch_data_from_github()
     #soup = get_scrapped_data(URL)
