@@ -155,9 +155,9 @@ def build_json(soup=None):
         table = []
         for tr in soup:
             tds = tr.find_all("td")
-            total_e += int(tds[2].text) + int(tds[3].text)
-            total_c += int(tds[4].text)
-            total_d += int(str(tds[5].text).replace("#", ""))
+            total_e += int(tds[2].text)
+            total_c += int(tds[3].text)
+            total_d += int(str(tds[4].text).replace("#", ""))
             total_s += 1
             table.append({"state": tds[1].text, "effected": int(
                 tds[2].text), "recovered": int(tds[3].text), "death": int(str(tds[4].text).replace("#", ""))})
