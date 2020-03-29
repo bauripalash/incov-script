@@ -33,7 +33,7 @@ URL = "https://www.mohfw.gov.in/"
 DATAFOLDER = os.path.join(os.curdir, "data")
 TEMPFOLDER = os.path.join(os.curdir, "temp")
 CSV_HEADERS = [
-    "state/ut", "confirmed (indian)", "confirmed (foreign)", "cured/discharged", "death"]
+    "state/ut", "confirmed", "cured/discharged", "death"]
 REPO_NAME = "ncov-19-india"
 REPORT_REPO_NAME = "incov-report"
 
@@ -104,7 +104,7 @@ def write_csv(soup=None):
             for tr in soup:
                 tds = tr.find_all("td")
                 writer.writerow([tds[1].text, tds[2].text,
-                                 tds[3].text, tds[4].text, str(tds[5].text).replace("#", "")])
+                                 tds[3].text, tds[4].text])
         return True
     except Exception as e:
         print(e)
@@ -160,7 +160,7 @@ def build_json(soup=None):
             total_d += int(str(tds[5].text).replace("#", ""))
             total_s += 1
             table.append({"state": tds[1].text, "effected": int(
-                tds[2].text) + int(tds[3].text), "recovered": int(tds[4].text), "death": int(str(tds[5].text).replace("#", ""))})
+                tds[2].text), "recovered": int(tds[3].text), "death": int(str(tds[4].text).replace("#", ""))})
         table.append({"total_effected": total_e, "total_cured": total_c, "total_death": total_d, "total_states": total_s,
                       "last_update": datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")})
         # print(table)
