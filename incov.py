@@ -87,6 +87,31 @@ def print_data_table(soup=None):
         logger.error(f"Got Error While Printing Table : {str(e)}")
 
 
+def state_trend():
+    try:
+        STATE_DAILY_DATA = {
+            "CONFIRMED": "https://raw.githubusercontent.com/covid19india/api/master/states_daily_csv/confirmed.csv",
+            "DEATHS": "https://raw.githubusercontent.com/covid19india/api/master/states_daily_csv/deceased.csv",
+            "RECOVERED": "https://raw.githubusercontent.com/covid19india/api/master/states_daily_csv/recovered.csv"
+        }
+        TREND_TABLE = {}
+        for key in STATE_DAILY_DATA.keys():
+            link = STATE_DAILY_DATA[key]
+            df = pd.read_csv(link)
+            df = df.fillna(0)
+            df = df.astype(int , errors='ignore')
+            df = df.iloc[:, :-1]
+            TREND_TABLE[key] = df.to_dict("list")
+        # print(TREND_TABLE)
+        with open(os.path.join(DATAFOLDER , "trend.json"), "w") as f:
+            f.write(str(TREND_TABLE).replace("'" , '"'))
+        return True
+    except Exception as e:
+        return False
+        print("STATE TREND FAILED")
+
+
+
 def write_csv(soup=None):
     try:
         if soup is None:
@@ -218,7 +243,7 @@ def main():
             print("CSV WRITE COMPLETED")
 
             rep = build_json(soup)
-            tr = True  # build_daily_data_json()
+            tr = state_trend()  # build_daily_data_json()
             gh = push_to_github()
 
             if gh and rep and tr:
