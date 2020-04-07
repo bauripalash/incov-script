@@ -99,17 +99,16 @@ def state_trend():
             link = STATE_DAILY_DATA[key]
             df = pd.read_csv(link)
             df = df.fillna(0)
-            df = df.astype(int , errors='ignore')
+            df = df.astype(int, errors='ignore')
             df = df.iloc[:, :-1]
             TREND_TABLE[key] = df.to_dict("list")
         # print(TREND_TABLE)
-        with open(os.path.join(DATAFOLDER , "trend.json"), "w") as f:
-            f.write(str(TREND_TABLE).replace("'" , '"'))
+        with open(os.path.join(DATAFOLDER, "trend.json"), "w") as f:
+            f.write(str(TREND_TABLE).replace("'", '"'))
         return True
     except Exception as e:
         return False
         print("STATE TREND FAILED")
-
 
 
 def write_csv(soup=None):
@@ -137,14 +136,98 @@ def write_csv(soup=None):
         return False
 
 
+def build_demographic_report():
+    try:
+        DATA_JSON = "https://raw.githubusercontent.com/covid19india/api/master/raw_data.json"
+        res = requests.get(DATA_JSON).json()
+        # print(res)
+        GENDER_DICT = {"FEMALE": 0, "MALE": 0}
+        AGE_DICT = {"0-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-50": 0,
+                    "51-60": 0, "61-70": 0, "71-80": 0, "81-90": 0, "91-100": 0}
+        NATIONALITY_DICT = dict()
+        CURRENT_STATUS_DICT = dict()
+        STATE_DICT = dict()
+        TYPE_OF_TRANSMISSION = dict()
+        for p in res["raw_data"]:
+            # print(p)
+            if p["gender"] == "M":
+                GENDER_DICT["MALE"] += 1
+            elif p["gender"] == "F":
+                GENDER_DICT["FEMALE"] += 1
+            if p["nationality"]:
+                N = p["nationality"].lower()
+                if N not in NATIONALITY_DICT.keys():
+                    NATIONALITY_DICT[N] = 0
+                NATIONALITY_DICT[N] += 1
+            if p["currentstatus"]:
+                S = p["currentstatus"].lower()
+                if S not in CURRENT_STATUS_DICT.keys():
+                    CURRENT_STATUS_DICT[S] = 0
+                CURRENT_STATUS_DICT[S] += 1
+
+            if p["statecode"]:
+                S = p["statecode"]
+                if S not in STATE_DICT.keys():
+                    STATE_DICT[S] = 0
+                STATE_DICT[S] += 1
+
+            if p["typeoftransmission"]:
+                t = p["typeoftransmission"].lower()
+                if t not in TYPE_OF_TRANSMISSION.keys():
+                    TYPE_OF_TRANSMISSION[t] = 0
+                TYPE_OF_TRANSMISSION[t] += 1
+
+            if p["agebracket"]:
+                try:
+                    age = int(p["agebracket"])
+                except:
+                    # print("------")
+                    x = p["agebracket"].split("-")
+                    age = int((int(x[0]) + int(x[1]))/2)
+                # print(age)
+                if age >= 0 and age <= 10:
+                    AGE_DICT["0-10"] += 1
+                elif age > 10 and age <= 20:
+                    AGE_DICT["11-20"] += 1
+                elif age > 20 and age <= 30:
+                    AGE_DICT["21-30"] += 1
+                elif age > 30 and age <= 40:
+                    AGE_DICT["31-40"] += 1
+                elif age > 40 and age <= 50:
+                    AGE_DICT["41-50"] += 1
+                elif age > 50 and age <= 60:
+                    AGE_DICT["51-60"] += 1
+                elif age > 60 and age <= 70:
+                    AGE_DICT["61-70"] += 1
+                elif age > 70 and age <= 80:
+                    AGE_DICT["71-80"] += 1
+                elif age > 80 and age <= 90:
+                    AGE_DICT["81-90"] += 1
+                elif age > 90 and age <= 100:
+                    AGE_DICT["91-100"] += 1
+
+        # print(TYPE_OF_TRANSMISSION)
+        TABLE = {"GENDER": GENDER_DICT, "AGE": AGE_DICT, "NATIONALITY": NATIONALITY_DICT,
+                "CSTATUS": CURRENT_STATUS_DICT, "STATE": STATE_DICT, "TRANSMISSION": TYPE_OF_TRANSMISSION}
+
+        with open(os.path.join(DATAFOLDER, "demographic.json"), "w") as f:
+            f.write(json.dumps(TABLE))
+        return True
+    except Exception as e:
+        print(e)
+        print("FAILED WRITING DEMOGRAPHIC JSON")
+        return False
+
+
 def push_to_github():
     try:
         file_list = glob.glob(os.path.join(DATAFOLDER, "*.csv"))
         item_list = [x[-14:] for x in file_list]
 
         file_list.extend([os.path.join(DATAFOLDER, "report.json"),
-                          os.path.join(DATAFOLDER, "trend.json")])
-        item_list.extend(["report.json", "trend.json"])
+                          os.path.join(DATAFOLDER, "trend.json"),
+                          os.path.join(DATAFOLDER, "demographic.json")])
+        item_list.extend(["report.json", "trend.json" , "demographic.json"])
         TOKEN = os.getenv("GHTOKEN")
         g = Github(TOKEN)
         nrepo = g.get_user().get_repo(REPO_NAME)
@@ -243,7 +326,7 @@ def main():
             print("CSV WRITE COMPLETED")
 
             rep = build_json(soup)
-            tr = state_trend()  # build_daily_data_json()
+            tr = state_trend() and build_demographic_report() # build_daily_data_json()
             gh = push_to_github()
 
             if gh and rep and tr:
