@@ -326,7 +326,7 @@ def main():
             print("CSV WRITE COMPLETED")
 
             rep = build_json(soup)
-            tr = state_trend() and build_demographic_report() # build_daily_data_json()
+            tr = state_trend() and True#build_demographic_report() # build_daily_data_json()
             gh = push_to_github()
 
             if gh and rep and tr:
