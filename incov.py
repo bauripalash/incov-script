@@ -333,7 +333,7 @@ def main():
                 logger.info("ALL GITHUB PUSH COMPLETED")
 
                 print("ALL GITHUB PUSH COMPLETED")
-                send_email(True)
+                #send_email(True)
             else:
                 if not gh:
                     logger.error("DATA PUSH FAILED")
