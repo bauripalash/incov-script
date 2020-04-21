@@ -90,9 +90,9 @@ def print_data_table(soup=None):
 def state_trend():
     try:
         STATE_DAILY_DATA = {
-            "CONFIRMED": "https://raw.githubusercontent.com/covid19india/api/master/states_daily_csv/confirmed.csv",
-            "DEATHS": "https://raw.githubusercontent.com/covid19india/api/master/states_daily_csv/deceased.csv",
-            "RECOVERED": "https://raw.githubusercontent.com/covid19india/api/master/states_daily_csv/recovered.csv"
+            "CONFIRMED": "http://api.covid19india.org/states_daily_csv/confirmed.csv",
+            "DEATHS": "https://api.covid19india.org/states_daily_csv/deceased.csv",
+            "RECOVERED": "https://api.covid19india.org/states_daily_csv/recovered.csv"
         }
         TREND_TABLE = {}
         for key in STATE_DAILY_DATA.keys():
@@ -105,6 +105,7 @@ def state_trend():
         # print(TREND_TABLE)
         with open(os.path.join(DATAFOLDER, "trend.json"), "w") as f:
             f.write(str(TREND_TABLE).replace("'", '"'))
+        print("STATE TREND SUCCESS")
         return True
     except Exception as e:
         return False
@@ -138,7 +139,7 @@ def write_csv(soup=None):
 
 def build_demographic_report():
     try:
-        DATA_JSON = "https://raw.githubusercontent.com/covid19india/api/master/raw_data.json"
+        DATA_JSON = "https://api.covid19india.org/raw_data.json"
         res = requests.get(DATA_JSON).json()
         # print(res)
         GENDER_DICT = {"FEMALE": 0, "MALE": 0}
@@ -182,9 +183,15 @@ def build_demographic_report():
                     age = int(p["agebracket"])
                 except:
                     # print("------")
-                    x = p["agebracket"].split("-")
-                    age = int((int(x[0]) + int(x[1]))/2)
-                # print(age)
+                    try:
+                        #print(p["agebracket"])
+                        x = p["agebracket"].split("-")
+                        age = int((int(x[0]) + int(x[1]))/2)
+                    except:
+                        x = p["agebracket"].split(".")
+                        age = int(x[0])
+                        #print(age)
+                #print(age)
                 if age >= 0 and age <= 10:
                     AGE_DICT["0-10"] += 1
                 elif age > 10 and age <= 20:
@@ -212,6 +219,7 @@ def build_demographic_report():
 
         with open(os.path.join(DATAFOLDER, "demographic.json"), "w") as f:
             f.write(json.dumps(TABLE))
+        print("DEMOGRAPHIC SUCCESS")
         return True
     except Exception as e:
         print(e)
@@ -326,10 +334,11 @@ def main():
             print("CSV WRITE COMPLETED")
 
             rep = build_json(soup)
-            tr = state_trend() and True#build_demographic_report() # build_daily_data_json()
+            tr = state_trend() # build_daily_data_json()
+            d = build_demographic_report() 
             gh = push_to_github()
 
-            if gh and rep and tr:
+            if gh and rep and tr and d:
                 logger.info("ALL GITHUB PUSH COMPLETED")
 
                 print("ALL GITHUB PUSH COMPLETED")
@@ -344,6 +353,11 @@ def main():
                     print("REPORT PUSH FAILED")
                     send_email(False, "REPORT")
 
+                if not d:
+                    logger.error("DEMOGRAPHIC BUILD FAILED")
+                    print("DEMOGRAPHIC BUILD FAILED")
+                    send_email(False , "DEMOGRAPHIC")
+
         else:
             logger.error("CSV WRITE FAILED")
             print("CSV WRITE FAILED")
@@ -356,3 +370,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    #print(build_demographic_report())
+    #print(state_trend())
