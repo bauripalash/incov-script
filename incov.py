@@ -49,7 +49,7 @@ def get_scrapped_data(U: str = None):
             U = URL
         page = requests.get(U).text
         soup = bs(page, "html.parser")
-        return soup.find("section", {"id": "state-data"}).find_all('tbody')[0].find_all("tr")[:-5]
+        return soup.find("section", {"id": "state-data"}).find_all('tbody')[0].find_all("tr")[:-6]
     except Exception as e:
         print(e)
         logger.error(f"Got Error While Fetching Source : {str(e)}")
@@ -335,7 +335,7 @@ def main():
 
             rep = build_json(soup)
             tr = state_trend() # build_daily_data_json()
-            d = build_demographic_report() 
+            d =  True #build_demographic_report() 
             gh = push_to_github()
 
             if gh and rep and tr and d:
