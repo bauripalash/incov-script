@@ -271,7 +271,7 @@ def build_json(soup=None):
         table = []
         for tr in soup:
             tds = tr.find_all("td")
-            total_e += int(tds[2].text)
+            total_e += int(tds[5].text)
             total_c += int(tds[3].text)
             total_d += int(str(tds[4].text).replace("#", ""))
             total_s += 1
