@@ -128,7 +128,7 @@ def write_csv(soup=None):
             #soup = get_scrapped_data(URL)
             for tr in soup:
                 tds = tr.find_all("td")
-                writer.writerow([tds[1].text, tds[2].text,
+                writer.writerow([tds[1].text, tds[5].text,
                                  tds[3].text, tds[4].text])
         return True
     except Exception as e:
