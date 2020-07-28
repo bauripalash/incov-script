@@ -258,10 +258,8 @@ def push_to_github():
         file_list = glob.glob(os.path.join(DATAFOLDER, "*.csv"))
         item_list = [x[-14:] for x in file_list]
 
-        file_list.extend([os.path.join(DATAFOLDER, "report.json"),
-                          os.path.join(DATAFOLDER, "trend.json"),
-                          os.path.join(DATAFOLDER, "demographic.json")])
-        item_list.extend(["report.json", "trend.json" , "demographic.json"])
+        file_list.append(os.path.join(DATAFOLDER, "report.json"))
+        item_list.extend(["report.json"])
         TOKEN = os.getenv("GHTOKEN")
         g = Github(TOKEN)
         nrepo = g.get_user().get_repo(REPO_NAME)
