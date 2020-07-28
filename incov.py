@@ -70,8 +70,8 @@ def scrap_json():
             else:
                 _t = {"total_effected" : state["new_positive"] , "total_cured" : state["new_cured"] , "total_death" : state["new_death"] , "total_states" : len(data), "last_update" : datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")}
                 data.append(_t)
-
-        json.dump(data  , open("data/report.json" , "w"))
+        with open(os.path.join(DATAFOLDER , "report.json") , "w") as f: 
+            json.dump(data  , f)
         #print(j)
         return True
     except Exception as e:
