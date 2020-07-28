@@ -55,6 +55,28 @@ def get_scrapped_data(U: str = None):
         logger.error(f"Got Error While Fetching Source : {str(e)}")
         return False
 
+def scrap_json():
+    try:
+        data = []
+        req = requests.get("https://www.mohfw.gov.in/data/datanew.json").json()
+        for state in req:
+            if not state["sno"] == "11111":
+                _t = {"state" : "" , "effected" : 0 , "recovered" : 0 , "death" : 0}
+                _t["state"] = state["state_name"]
+                _t["effected"] = state["new_positive"]
+                _t["recovered"] = state["new_cured"]
+                _t["death"] = state["new_death"]
+                data.append(_t)
+            else:
+                _t = {"total_effected" : state["new_positive"] , "total_cured" : state["new_cured"] , "total_death" : state["new_death"] , "total_states" : len(data), "last_update" : datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%H:%M:%S - %d-%m-%Y")}
+                data.append(_t)
+
+        json.dump(data  , open("data/report.json" , "w"))
+        #print(j)
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 def fetch_data_from_github():
     try:
@@ -367,8 +389,20 @@ def main():
         print("DATA FOLDER FETCH FAILED")
         send_email(False, "FOLDER")
 
+def _main():
+    sj = scrap_json()
+    if not sj:
+        logger.error("SCRAP JSON FAILEd")
+        print("SCRAP JSON FAIL")
+        send_email(False , "REPORT")
+    push = push_to_github()
+    if not push:
+        logger.error("PUSH TO GITHUB FAILED")
+        print("PUSH tO GH Failed")
+        send_email(False , "DATA")
+
 
 if __name__ == "__main__":
-    main()
+    _main()
     #print(build_demographic_report())
     #print(state_trend())
